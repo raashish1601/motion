@@ -39,6 +39,39 @@ export interface ComplexValueInfo {
     types: Array<keyof ValueIndexes>
 }
 
+const isNameChar = (char: string) => {
+    const code = char.charCodeAt(0)
+    return (
+        (code >= 65 && code <= 90) ||
+        (code >= 97 && code <= 122) ||
+        (code >= 48 && code <= 57) ||
+        char === "-" ||
+        char === "_"
+    )
+}
+
+const isNumberInFunctionName = (
+    value: string,
+    token: string,
+    offset: number
+) => {
+    const nextIndex = offset + token.length
+
+    if (
+        !isNameChar(value.charAt(offset - 1)) &&
+        !isNameChar(value.charAt(nextIndex))
+    ) {
+        return false
+    }
+
+    let end = nextIndex
+    while (isNameChar(value.charAt(end))) {
+        end++
+    }
+
+    return value.charAt(end) === "("
+}
+
 // this regex consists of the `singleCssVariableRegex|rgbHSLValueRegex|digitRegex`
 const complexRegex =
     /var\s*\(\s*--(?:[\w-]+\s*|[\w-]+\s*,(?:\s*[^)(\s]|\s*\((?:[^)(]|\([^)(]*\))*\))+\s*)\)|#[\da-f]{3,8}|(?:rgb|hsl)a?\((?:-?[\d.]+%?[,\s]+){2}-?[\d.]+%?\s*(?:[,/]\s*)?(?:\b\d+(?:\.\d+)?|\.\d+)?%?\)|-?(?:\d+(?:\.\d+)?|\.\d+)/giu
@@ -57,23 +90,30 @@ export function analyseComplexValue(
     const types: Array<keyof ValueIndexes> = []
 
     let i = 0
-    const tokenised = originalValue.replace(complexRegex, (parsedValue) => {
-        if (color.test(parsedValue)) {
-            indexes.color.push(i)
-            types.push(COLOR_TOKEN)
-            values.push(color.parse(parsedValue))
-        } else if (parsedValue.startsWith(VAR_FUNCTION_TOKEN)) {
-            indexes.var.push(i)
-            types.push(VAR_TOKEN)
-            values.push(parsedValue)
-        } else {
-            indexes.number.push(i)
-            types.push(NUMBER_TOKEN)
-            values.push(parseFloat(parsedValue))
+    const tokenised = originalValue.replace(
+        complexRegex,
+        (parsedValue, offset, completeValue) => {
+            if (isNumberInFunctionName(completeValue, parsedValue, offset)) {
+                return parsedValue
+            }
+
+            if (color.test(parsedValue)) {
+                indexes.color.push(i)
+                types.push(COLOR_TOKEN)
+                values.push(color.parse(parsedValue))
+            } else if (parsedValue.startsWith(VAR_FUNCTION_TOKEN)) {
+                indexes.var.push(i)
+                types.push(VAR_TOKEN)
+                values.push(parsedValue)
+            } else {
+                indexes.number.push(i)
+                types.push(NUMBER_TOKEN)
+                values.push(parseFloat(parsedValue))
+            }
+            ++i
+            return SPLIT_TOKEN
         }
-        ++i
-        return SPLIT_TOKEN
-    })
+    )
     const split = tokenised.split(SPLIT_TOKEN)
 
     return { values, split, indexes, types }

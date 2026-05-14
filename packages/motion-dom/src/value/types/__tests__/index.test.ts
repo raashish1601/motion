@@ -114,6 +114,12 @@ describe("complex value type", () => {
             0,
             { red: 0, green: 255, blue: 0, alpha: 0 },
         ])
+        expect(
+            complex.parse(
+                "matrix3d(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)"
+            )
+        ).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        expect(complex.parse("translate3d(1px, 2px, 3px)")).toEqual([1, 2, 3])
     })
 
     it("createTransformer returns a transformer function that correctly inserts values", () => {
@@ -140,6 +146,15 @@ describe("complex value type", () => {
         const transformSingleFunction = complex.createTransformer(GREYSCALE)
         expect(transformSingleFunction([100])).toBe(GREYSCALE)
 
+        expect(
+            complex.createTransformer(
+                "matrix3d(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)"
+            )([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        ).toBe("matrix3d(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)")
+        expect(
+            complex.createTransformer("translate3d(1px, 2px, 3px)")([1, 2, 3])
+        ).toBe("translate3d(1px, 2px, 3px)")
+
         const transformSingleNumber = complex.createTransformer(2)
         expect(transformSingleNumber([100])).toBe("100")
     })
@@ -156,22 +171,27 @@ describe("complex value type", () => {
         ).toBe(
             "linear-gradient(0turn, rgba(255, 255, 255, 0)) 0px, rgba(0, 255, 255, 0)) 0px"
         )
+        expect(
+            complex.getAnimatableNone(
+                "matrix3d(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)"
+            )
+        ).toBe("matrix3d(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)")
     })
 
-    it('does not zero out divisors in calc() expressions', () => {
+    it("does not zero out divisors in calc() expressions", () => {
         // calc() with division: divisor must not become 0 (division by zero => NaN)
-        expect(
-            complex.getAnimatableNone("calc(var(--spacing) / 5)")
-        ).toBe("calc(var(--spacing) / 5)")
+        expect(complex.getAnimatableNone("calc(var(--spacing) / 5)")).toBe(
+            "calc(var(--spacing) / 5)"
+        )
 
-        expect(
-            complex.getAnimatableNone("calc(20% + 200px / 2)")
-        ).toBe("calc(0% + 0px / 2)")
+        expect(complex.getAnimatableNone("calc(20% + 200px / 2)")).toBe(
+            "calc(0% + 0px / 2)"
+        )
 
         // Multiplication should still zero out normally
-        expect(
-            complex.getAnimatableNone("calc(20% + 200px * 2)")
-        ).toBe("calc(0% + 0px * 0)")
+        expect(complex.getAnimatableNone("calc(20% + 200px * 2)")).toBe(
+            "calc(0% + 0px * 0)"
+        )
     })
 })
 
