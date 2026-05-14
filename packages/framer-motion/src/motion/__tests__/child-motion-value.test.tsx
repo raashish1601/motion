@@ -72,4 +72,27 @@ describe("child as motion value", () => {
 
         return expect(promise).resolves.toHaveTextContent("4")
     })
+
+    test("animates svg text children as textContent", async () => {
+        const promise = new Promise<SVGTextElement>((resolve) => {
+            const Component = ({ value }: { value: number }) => (
+                <svg>
+                    <motion.text
+                        animate={{ children: value }}
+                        transition={{ type: false }}
+                    />
+                </svg>
+            )
+            const { container, rerender } = render(<Component value={1} />)
+            rerender(<Component value={2} />)
+
+            frame.postRender(() => {
+                resolve(container.firstChild?.firstChild as SVGTextElement)
+            })
+        })
+
+        const text = await promise
+        expect(text).toHaveTextContent("2")
+        expect(text).not.toHaveAttribute("children")
+    })
 })

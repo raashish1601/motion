@@ -25,14 +25,21 @@ export abstract class DOMVisualElement<
         props: MotionNodeOptions,
         key: string
     ): AnyResolvedKeyframe | MotionValue<any> | undefined {
-        const style = (props as MotionNodeOptions & { style?: MotionStyle }).style
+        const style = (props as MotionNodeOptions & { style?: MotionStyle })
+            .style
         return style ? (style[key] as string) : undefined
     }
 
     removeValueFromRenderState(
         key: string,
-        { vars, style }: HTMLRenderState
+        renderState: HTMLRenderState
     ): void {
+        const { vars, style } = renderState
+
+        if (key === "children") {
+            delete renderState.children
+        }
+
         delete vars[key]
         delete style[key]
     }
@@ -40,13 +47,15 @@ export abstract class DOMVisualElement<
     KeyframeResolver = DOMKeyframesResolver
 
     childSubscription?: VoidFunction
-    handleChildMotionValue() {
+    handleChildMotionValue(): void {
         if (this.childSubscription) {
             this.childSubscription()
             delete this.childSubscription
         }
 
-        const { children } = this.props as MotionNodeOptions & { children?: MotionValue | any }
+        const { children } = this.props as MotionNodeOptions & {
+            children?: MotionValue | any
+        }
         if (isMotionValue(children)) {
             this.childSubscription = children.on("change", (latest) => {
                 if (this.current) {

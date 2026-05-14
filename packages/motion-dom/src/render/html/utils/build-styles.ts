@@ -11,7 +11,7 @@ export function buildHTMLStyles(
     state: HTMLRenderState,
     latestValues: ResolvedValues,
     transformTemplate?: MotionNodeOptions["transformTemplate"]
-) {
+): void {
     const { style, vars, transformOrigin } = state
 
     // Track whether we encounter any transform or transformOrigin values.
@@ -27,7 +27,10 @@ export function buildHTMLStyles(
     for (const key in latestValues) {
         const value = latestValues[key]
 
-        if (transformProps.has(key)) {
+        if (key === "children") {
+            state.children = value
+            continue
+        } else if (transformProps.has(key)) {
             // If this is a transform, flag to enable further transform processing
             hasTransform = true
             continue

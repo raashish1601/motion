@@ -1,3 +1,4 @@
+import { AnyResolvedKeyframe } from "../../animation/types"
 import { ResolvedValues } from "../types"
 
 export interface TransformOrigin {
@@ -7,6 +8,11 @@ export interface TransformOrigin {
 }
 
 export interface HTMLRenderState {
+    /**
+     * Text content to apply directly to the rendered Element.
+     */
+    children?: AnyResolvedKeyframe
+
     /**
      * A mutable record of transforms we want to apply directly to the rendered Element
      * every frame. We use a mutable data structure to reduce GC during animations.

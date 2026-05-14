@@ -547,6 +547,10 @@ export interface VariableKeyframesDefinition {
     [key: `--${string}`]: ValueKeyframesDefinition
 }
 
+export interface TextKeyframesDefinition {
+    children?: ValueKeyframesDefinition
+}
+
 export type SVGForcedAttrKeyframesDefinition = {
     [K in keyof SVGForcedAttrProperties]?: ValueKeyframesDefinition
 }
@@ -559,7 +563,8 @@ export type DOMKeyframesDefinition = StyleKeyframesDefinition &
     SVGKeyframesDefinition &
     SVGPathKeyframesDefinition &
     SVGForcedAttrKeyframesDefinition &
-    VariableKeyframesDefinition
+    VariableKeyframesDefinition &
+    TextKeyframesDefinition
 
 export interface Target extends DOMKeyframesDefinition {}
 

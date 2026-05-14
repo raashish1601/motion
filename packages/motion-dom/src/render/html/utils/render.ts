@@ -1,12 +1,13 @@
 import type { MotionStyle } from "../../VisualElement"
+import type { IProjectionNode } from "../../../projection/node/types"
 import { HTMLRenderState } from "../types"
 
 export function renderHTML(
     element: HTMLElement,
-    { style, vars }: HTMLRenderState,
+    { style, vars, children }: HTMLRenderState,
     styleProp?: MotionStyle,
-    projection?: any
-) {
+    projection?: IProjectionNode
+): void {
     const elementStyle = element.style
 
     let key: string
@@ -22,5 +23,9 @@ export function renderHTML(
         // Loop over any CSS variables and assign those.
         // They can only be assigned using `setProperty`.
         elementStyle.setProperty(key, vars[key] as string)
+    }
+
+    if (children !== undefined) {
+        element.textContent = `${children}`
     }
 }
