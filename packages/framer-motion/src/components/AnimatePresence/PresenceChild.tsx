@@ -33,10 +33,23 @@ export const PresenceChild = ({
     mode,
     anchorX,
     anchorY,
-    root
+    root,
 }: PresenceChildProps) => {
     const presenceChildren = useConstant(newChildrenMap)
     const id = useId()
+    const isPresentRef = React.useRef(isPresent)
+    const onExitCompleteRef = React.useRef(onExitComplete)
+
+    isPresentRef.current = isPresent
+    onExitCompleteRef.current = onExitComplete
+
+    const notifyOnExitComplete = React.useCallback(() => {
+        for (const isComplete of presenceChildren.values()) {
+            if (!isComplete) return
+        }
+
+        onExitCompleteRef.current && onExitCompleteRef.current()
+    }, [presenceChildren])
 
     let isReusedContext = true
     let context = useMemo((): PresenceContextProps => {
@@ -48,19 +61,21 @@ export const PresenceChild = ({
             custom,
             onExitComplete: (childId: string) => {
                 presenceChildren.set(childId, true)
-
-                for (const isComplete of presenceChildren.values()) {
-                    if (!isComplete) return // can stop searching when any is incomplete
-                }
-
-                onExitComplete && onExitComplete()
+                notifyOnExitComplete()
             },
             register: (childId: string) => {
                 presenceChildren.set(childId, false)
-                return () => presenceChildren.delete(childId)
+                return () => {
+                    const isComplete = presenceChildren.get(childId)
+                    presenceChildren.delete(childId)
+
+                    if (!isPresentRef.current && isComplete !== true) {
+                        notifyOnExitComplete()
+                    }
+                }
             },
         }
-    }, [isPresent, presenceChildren, onExitComplete])
+    }, [isPresent, presenceChildren, notifyOnExitComplete])
 
     /**
      * If the presence of a child affects the layout of the components around it,
@@ -80,14 +95,17 @@ export const PresenceChild = ({
      * component immediately.
      */
     React.useEffect(() => {
-        !isPresent &&
-            !presenceChildren.size &&
-            onExitComplete &&
-            onExitComplete()
-    }, [isPresent])
+        !isPresent && !presenceChildren.size && notifyOnExitComplete()
+    }, [isPresent, presenceChildren, notifyOnExitComplete])
 
     children = (
-        <PopChild pop={mode === "popLayout"} isPresent={isPresent} anchorX={anchorX} anchorY={anchorY} root={root}>
+        <PopChild
+            pop={mode === "popLayout"}
+            isPresent={isPresent}
+            anchorX={anchorX}
+            anchorY={anchorY}
+            root={root}
+        >
             {children}
         </PopChild>
     )

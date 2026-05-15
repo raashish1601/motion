@@ -9,6 +9,7 @@ import {
     motion,
     MotionConfig,
     useAnimation,
+    useIsPresent,
 } from "../../.."
 import { nextFrame } from "../../../gestures/__tests__/utils"
 import { render } from "../../../jest.setup"
@@ -85,6 +86,43 @@ describe("AnimatePresence", () => {
         rerender(<Component color="green" />)
 
         expect(container.firstChild).toHaveStyle("background-color: green")
+    })
+
+    test("Removes a child when its exiting motion component unmounts after exit starts", async () => {
+        const Child = () => {
+            const isPresent = useIsPresent()
+            const [showMotion, setShowMotion] = React.useState(true)
+
+            React.useEffect(() => {
+                if (!isPresent) {
+                    setShowMotion(false)
+                }
+            }, [isPresent])
+
+            return showMotion ? (
+                <motion.div exit={{ opacity: 0 }} transition={{ duration: 10 }}>
+                    open
+                </motion.div>
+            ) : (
+                <div>closed</div>
+            )
+        }
+
+        const Component = ({ isVisible }: { isVisible: boolean }) => {
+            return (
+                <AnimatePresence>
+                    {isVisible && <Child key="child" />}
+                </AnimatePresence>
+            )
+        }
+
+        const { container, rerender } = render(<Component isVisible />)
+
+        expect(container.textContent).toBe("open")
+
+        rerender(<Component isVisible={false} />)
+
+        await waitFor(() => expect(container.firstChild).toBeFalsy())
     })
 
     test("Animates out a component when its removed", async () => {
